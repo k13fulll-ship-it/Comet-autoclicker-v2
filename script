@@ -1,95 +1,32 @@
--- Comet (V6 - Multi-Square Edition)
+-- Comet (V6 - Final Edition: Draggable Multi-Square)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game:GetService("CoreGui")
-ScreenGui.Name = "Comet_v6_Multi"
+ScreenGui.Name = "Comet_Draggable_V6"
 ScreenGui.ResetOnSpawn = false
 
-local TweenService = game:GetService("TweenService")
 local VIM = game:GetService("VirtualInputManager")
-
--- Store all squares in a table
 local ClickTargets = {}
 local IsAutoClicking = false
 
--- 1. Intro text setup
-local DevText = Instance.new("TextLabel")
-DevText.Size = UDim2.new(1, 0, 0, 100)
-DevText.Position = UDim2.new(0, 0, 0.5, -50)
-DevText.Text = "this script belongs to the developer Comet"
-DevText.TextColor3 = Color3.fromRGB(255, 255, 255)
-DevText.TextSize = 40 
-DevText.Font = Enum.Font.SpecialElite
-DevText.BackgroundTransparency = 1
-DevText.TextTransparency = 1
-DevText.Parent = ScreenGui
-
-local TextStroke = Instance.new("UIStroke")
-TextStroke.Thickness = 2
-TextStroke.Color = Color3.fromRGB(0, 0, 0)
-TextStroke.Transparency = 1
-TextStroke.Parent = DevText
-
--- Main interface
+-- --- Interface Setup ---
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 220, 0, 240)
 MainFrame.Position = UDim2.new(0.5, -110, 0.5, -120)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.BorderSizePixel = 0
-MainFrame.Visible = false
-MainFrame.Draggable = true
 MainFrame.Active = true
+MainFrame.Draggable = true 
 MainFrame.Parent = ScreenGui
-
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame)
 
 local Title = Instance.new("TextLabel")
-Title.Text = "Comet Multi"
+Title.Text = "Comet Multi-Drag"
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold
 Title.Parent = MainFrame
 
-local Credits = Instance.new("TextLabel")
-Credits.Text = "by:Comet"
-Credits.Size = UDim2.new(1, 0, 0, 20)
-Credits.Position = UDim2.new(0, 0, 1, -20)
-Credits.BackgroundTransparency = 1
-Credits.TextColor3 = Color3.fromRGB(150, 150, 150)
-Credits.TextSize = 12
-Credits.Parent = MainFrame
-
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Text = "X"
-CloseBtn.Size = UDim2.new(0, 40, 0, 40)
-CloseBtn.Position = UDim2.new(1, -40, 0, 0)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.Parent = MainFrame
-
-local OpenBtn = Instance.new("TextButton")
-OpenBtn.Text = "START"
-OpenBtn.Size = UDim2.new(0, 80, 0, 35)
-OpenBtn.Position = UDim2.new(0, 10, 0.4, 0)
-OpenBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-OpenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-OpenBtn.Visible = false
-OpenBtn.Parent = ScreenGui
-Instance.new("UICorner", OpenBtn)
-
--- Animation
-task.spawn(function()
-    TweenService:Create(DevText, TweenInfo.new(1.5), {TextTransparency = 0}):Play()
-    TweenService:Create(TextStroke, TweenInfo.new(1.5), {Transparency = 0.5}):Play()
-    task.wait(3)
-    TweenService:Create(DevText, TweenInfo.new(1), {TextTransparency = 1}):Play()
-    TweenService:Create(TextStroke, TweenInfo.new(1), {Transparency = 1}):Play()
-    task.wait(1)
-    DevText:Destroy()
-    MainFrame.Visible = true
-end)
-
--- Button Creator
+-- Helper to create buttons
 local function createBtn(name, pos, color)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, 190, 0, 40)
@@ -103,58 +40,67 @@ local function createBtn(name, pos, color)
     return btn
 end
 
-local b1 = createBtn("Add a Square", UDim2.new(0, 15, 0, 55), Color3.fromRGB(45, 45, 45))
-local b2 = createBtn("Start Auto Clicker", UDim2.new(0, 15, 0, 105), Color3.fromRGB(0, 150, 0))
-local b3 = createBtn("Clear All Squares", UDim2.new(0, 15, 0, 155), Color3.fromRGB(150, 0, 0))
+local b1 = createBtn("Add Square", UDim2.new(0, 15, 0, 55), Color3.fromRGB(45, 45, 45))
+local b2 = createBtn("Start Clicking", UDim2.new(0, 15, 0, 105), Color3.fromRGB(0, 150, 0))
+local b3 = createBtn("Clear All", UDim2.new(0, 15, 0, 155), Color3.fromRGB(150, 0, 0))
 
-CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false OpenBtn.Visible = true end)
-OpenBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true OpenBtn.Visible = false end)
+-- --- Functions ---
 
--- Function to add a new square
+-- Spawns a draggable square
 b1.MouseButton1Click:Connect(function()
-    local NewSquare = Instance.new("Frame", ScreenGui)
+    local NewSquare = Instance.new("Frame")
+    NewSquare.Name = "ClickZone"
     NewSquare.Size = UDim2.new(0, 50, 0, 50)
     NewSquare.Position = UDim2.new(0.5, -25, 0.5, -25)
-    NewSquare.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    NewSquare.BackgroundTransparency = 0.5
-    NewSquare.Draggable = true
+    NewSquare.BackgroundColor3 = Color3.fromHSV(math.random(), 0.6, 0.8)
+    NewSquare.BackgroundTransparency = 0.4
     NewSquare.Active = true
+    NewSquare.Draggable = true -- Standard drag enabled
+    NewSquare.Parent = ScreenGui
     Instance.new("UICorner", NewSquare)
     
+    local Label = Instance.new("TextLabel", NewSquare)
+    Label.Size = UDim2.new(1, 0, 1, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = "DRAG ME"
+    Label.TextSize = 10
+    Label.TextColor3 = Color3.new(1, 1, 1)
+
     table.insert(ClickTargets, NewSquare)
-    b1.Text = "Squares: "..#ClickTargets
-    task.wait(0.5)
-    b1.Text = "Add a Square"
 end)
 
--- Multi-click loop
+-- Clicking Logic
 b2.MouseButton1Click:Connect(function()
     if #ClickTargets > 0 and not IsAutoClicking then
         IsAutoClicking = true
-        b2.Text = "Running... ✅"
+        b2.Text = "Clicking Active ✅"
+        b2.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+        
         task.spawn(function()
             while IsAutoClicking do
                 for _, target in pairs(ClickTargets) do
                     if target and target.Parent then
-                        local posX = target.AbsolutePosition.X + (target.AbsoluteSize.X / 2)
-                        local posY = target.AbsolutePosition.Y + (target.AbsoluteSize.Y / 2)
-                        VIM:SendMouseButtonEvent(posX, posY, 0, true, game, 1)
-                        VIM:SendMouseButtonEvent(posX, posY, 0, false, game, 1)
+                        -- We calculate center every loop so it follows the drag
+                        local x = target.AbsolutePosition.X + (target.AbsoluteSize.X / 2)
+                        local y = target.AbsolutePosition.Y + (target.AbsoluteSize.Y / 2)
+                        
+                        VIM:SendMouseButtonEvent(x, y, 0, true, game, 1)
+                        VIM:SendMouseButtonEvent(x, y, 0, false, game, 1)
                     end
                 end
-                task.wait(0.01) -- Click speed
+                task.wait(0.05) -- Slight delay to keep it smooth while dragging
             end
         end)
     end
 end)
 
--- Remove logic
+-- Reset Logic
 b3.MouseButton1Click:Connect(function()
     IsAutoClicking = false
-    b2.Text = "Start Auto Clicker"
-    for _, target in pairs(ClickTargets) do
-        target:Destroy()
+    b2.Text = "Start Clicking"
+    b2.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+    for _, v in pairs(ClickTargets) do
+        v:Destroy()
     end
     ClickTargets = {}
-    b1.Text = "Add a Square"
 end)
